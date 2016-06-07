@@ -8,90 +8,104 @@ from pygame.locals import *
 if not pygame.font : print "Warning, pygame 'font' module disabled!"
 if not pygame.mixer: print "Warning, pygame 'sound' module disabled!"
 
-# --------------------------------------------------------
-# Clamping a number between min m and max M
-# --------------------------------------------------------
+# -------------------------------------------------------
 def clamp(x,m,M):
+    '''Clamping a number between min m and max M'''
     if   x < m : return m
     elif x > M : return M
     return x
     
 ENGINE = None # Global GAME variable
 
+# -------------------------------------------------------
+class Actor(object):
+    '''Base Actor class'''
+    def __init__(self,engine):
+        self.engine = engine
+    
+    def update(self, dt): 
+        None
+    
+    def draw(self): 
+        None
+
+    def destroy(self):
+        None
+
 # --------------------------------------------------------
-# --------------------------------------------------------
-class Board:
-    def __init__(self,engine,scr,dim=(8,9)):
-        self.screen = scr
-        self.dim = dim
-        self.matrix = [[0 for x in range(dim[0])] for y in range(dim[1])]
-        self.colors=[ (100,100,100), (169,15,14), (94,179,20), (40,169,218), (112,0,252), (231,201,27)]
-        self.randomize()
-        self.tilesize = (32,32)
-        self.padding = (5,5)
-        r = self.screen.get_rect()
-        w = self.tilesize[0]*self.dim[0] + self.padding[0]*(self.dim[0]-1)
-        self.startdraw = ( r.width/2 - w/2, self.tilesize[1]+self.padding[1]) 
+class BoardBase(Actor):
+    ''' Base logic for boards '''
+    def __init__(self,engine,tilesdim):
+        super(BoardBase,self).__init__(engine)
+        self.dim = tilesdim
+        self.colors=[ (100,100,100), (169,15,14), (94,179,20), (40,169,218), (112,0,252), (231,201,27)]        
         self.font = engine.loadFont("type_writer.ttf",18)
         self.texts = [self.font.render(str(i+1),1,(255,255,255)) for i in range(5)]
 
-    def update(self):
-        None
+# --------------------------------------------------------
+class BoardSquares(BoardBase):
+    '''Contains the board logic. SQUARES'''
+    def __init__(self,engine,tilesdim=(8,9)):
+        super(BoardSquares,self).__init__(engine,tilesdim)
+        self.grid = [[0 for x in range(self.dim[0])] for y in range(self.dim[1])]                
+        self.randomize()
 
-    def draw(self):
-        x,y = self.startdraw[0], self.startdraw[1]
-        for row in self.matrix:
-            x=self.startdraw[0]
-            for tile in row:
-                pygame.draw.rect( self.screen, self.colorOfTile(tile), Rect( (x,y), self.tilesize) )
-                x+=self.tilesize[0]+self.padding[0]
-            y+=self.tilesize[1]+self.padding[1]
+    def update(self, dt):
+        super(BoardSquares,self).update(dt)
 
-        x, y = self.tilesize[0], self.tilesize[1]+self.padding[1]
-        for i in range(5):
-            r = Rect( (x,y), self.tilesize)
-            self.screen.blit(self.texts[i], r)
-            r=r.move(r.width,0)
-            pygame.draw.rect( self.screen, self.colorOfTile(i+1), r )
-            y += self.tilesize[1]+self.padding[1]
-
-    def colorOfTile(self,t):
-        return self.colors[t]
+    def draw(self):    
+        super(BoardSquares,self).draw()
+        sx, sy = 10, 10
+        px, py = 5, 5
+        r = Rect( sx, sy, 32, 32)        
+        scr = self.engine.SCREEN
+        for j in range(self.dim[1]):
+            r.x = sx
+            for i in range(self.dim[0]):
+                c = self.grid[j][i]
+                pygame.draw.rect( scr, self.colors[c], r)
+                r.x += r.width + px
+            r.y += r.height + py
 
     def randomize(self):
         for x in range(self.dim[0]):
             for y in range(self.dim[1]):
-                self.matrix[y][x] = random.randint(1,5)
+                self.grid[y][x] = random.randint(1,5)
 
     def changeTo(self,t):
-        curT = self.matrix[0][0]
-        x,y=0,0
-        foundRight=False
-        while True:
-            if self.matrix[y][x] == curT:
-                self.matrix[y][x] = t
-                x+=1
-            else:
-                if foundRight:
-                    break
-                else:
-                    foundRight=True
-                    y+=1
-                    x=0
-            if x>=self.dim[0]:
-                y += 1
-            if y>=self.dim[1]:
-                break
+        None
 
 # --------------------------------------------------------
+class BoardTriangles(BoardBase):
+    '''Contains the board logic. TRIANGLES'''
+    def __init__(self,engine,tilesdim=(7,7)):
+        super(BoardTriangles,self).__init__(engine,tilesdim)        
+        self.grid = [[0 for x in range(self.dim[0])] for y in range(self.dim[1])]        
+        self.randomize()
+
+    def update(self, dt):
+        super(BoardSquares,self).update(dt)
+
+    def draw(self):    
+        super(BoardSquares,self).draw()
+
+    def randomize(self):
+        for x in range(self.dim[0]):
+            for y in range(self.dim[1]):
+                self.grid[y][x] = random.randint(1,5)
+
+    def changeTo(self,t):
+        None
+
 # --------------------------------------------------------
-class Player:
+class Player(Actor):
+    '''A player has the input game logic'''
     def __init__(self,engine,board):
-        self.engine = engine
+        super(Player,self).__init__(engine)
         self.board = board
         self.keys = [K_1, K_2, K_3, K_4, K_5]
 
-    def update(self):
+    def update(self, dt):
         for k in self.keys:
             if self.engine.KEYPRESSED[k]:
                 self.board.changeTo( k-K_1+1 )
@@ -100,10 +114,10 @@ class Player:
         None
 
 # --------------------------------------------------------
-# Main Engine class
-# --------------------------------------------------------
-class EngineClass:
+class Engine:
+    '''Main Engine class'''
     def __init__(self,name,resolution):
+        '''Builds the Engine'''
         self.clock = pygame.time.Clock()
         self.SCREENRECT = Rect(0, 0, resolution[0], resolution[1])
         self.IMAGECACHE, self.SOUNDCACHE, self.FONTCACHE = {}, {}, {}
@@ -112,11 +126,21 @@ class EngineClass:
         self.SCREEN = pygame.display.set_mode(self.SCREENRECT.size, pygame.DOUBLEBUF, bestdepth)
         self.name = name
         pygame.display.set_caption(name)
-        self.atfps, self.nextSound = 0.0, 0.0
-        self.board = Board(self,self.SCREEN)
-        self.player = Player(self, self.board)
+        self.atfps, self.nextSound = 0.0, 0.0        
+        self.actors = []
+
+    def addActor(self,a):
+        '''Registers an actor in the game. an actor must be subclass of Actor'''
+        self.actors.append(a)
+
+    def destroy(self):        
+        '''Deinit the engine'''
+        for a in self.actors:
+            a.destroy()
+        self.actors = []
 
     def loadFont(self,fontname,size):
+        '''Loads and caches a font handle'''
         if not pygame.font: return None
         key = (fontname,size)
         font = None
@@ -129,6 +153,7 @@ class EngineClass:
         return font
         
     def loadSound(self,name):
+        '''Loads and caches a sound handle'''
         fullname = "data/"+name #os.path.join('data', name)
         sound = None
         if not self.SOUNDCACHE.has_key(name):            
@@ -143,6 +168,7 @@ class EngineClass:
         return sound
     
     def loadImage(self,file, rotation = 0, flipx = False, flipy = False):
+        '''Loads and caches an image handle'''
         key = (file, rotation, flipx, flipy)
         if not self.IMAGECACHE.has_key(key):
             path = "data/"+file #os.path.join('data', file)
@@ -163,28 +189,30 @@ class EngineClass:
         return self.IMAGECACHE[key]
         
     def playSound(self,name,vol=1.0):
+        '''Plays a sound by name'''
         if self.nextSound <= 0.0: # avoiding two very consecutive sounds
             sound = self.loadSound(name)
             sound.set_volume(vol)
             sound.play()
             self.nextSound = 0.1
-        
-    def destroy(self):
-        None
 
     def draw(self):
-        self.board.draw()
-        self.player.draw()
+        '''Draws and flip buffers'''
+        for a in self.actors:
+            a.draw()        
+        pygame.display.flip()
                    
     def update(self,dt):
+        '''Updates the engine state'''
         # Update fps stats
         self.atfps += dt
         self.nextSound -= dt
         if self.atfps > 3.0:
             pygame.display.set_caption(self.name + " fps: " + str(int(self.clock.get_fps())))
             self.atfps = 0.0     
-        self.board.update()
-        self.player.update()
+        for a in self.actors:
+            a.update(dt)
+
 # --------------------------------------------------------
 # Entry point
 # --------------------------------------------------------
@@ -192,47 +220,40 @@ def main():
     global ENGINE
     # Initialize
     pygame.init()
-    ENGINE = EngineClass( "colors!", (640,480) )
+    ENGINE = Engine( "colors!", (640,480) )
+    board = BoardSquares(ENGINE)
+    player = Player(ENGINE, board)
+    ENGINE.addActor( board )
+    ENGINE.addActor( player )
+    
     #pygame.mouse.set_visible(0)
  
     # Main Loop
     nextkey = 0.0
     finished = False
     while not finished:
-        # -- CLOCK
+        # Clock
         ENGINE.clock.tick(60)
         dt = ENGINE.clock.get_time()/1000.0
         
-        # -- INPUT
+        # Input
         for event in pygame.event.get():
             if event.type == QUIT:
                 finished = True
-                break
-        
+                break        
         ENGINE.KEYPRESSED = pygame.key.get_pressed()
         finished = finished or ENGINE.KEYPRESSED[K_ESCAPE]
         nextkey -= dt
         
-        # -- UPDATE
+        # Update
         ENGINE.update(dt)
 
-        # -- DRAW
+        # Draw
         ENGINE.draw()
-
-        pygame.display.flip()
 
     ENGINE.destroy()
     pygame.quit()
 
-# Game when this script is executed, not imported
+# Execute the game when this py is exec, not imported
 if __name__ == '__main__':
-    main()
-    ENGINE.destroy()
-    '''
-    try:
-        main()
-    except Exception,e:
-        ENGINE.destroy()
-        pygame.quit()
-        raise e
-    '''
+    main()    
