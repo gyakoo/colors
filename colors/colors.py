@@ -56,6 +56,9 @@ class BoardBase(engine.Actor):
     def reset(self):
         self.randomize()
 
+    def finished(self):
+        None
+
 # --------------------------------------------------------
 class BoardSquares(BoardBase):
     '''Contains the board logic. SQUARES'''
@@ -113,6 +116,13 @@ class BoardSquares(BoardBase):
         if self.grid[y][x]==cc:
             self.grid[y][x]=t
 
+    def finished(self):
+        cc = self.grid[0][0]
+        for row in self.grid:
+            for c in row:
+                if c!=cc:
+                    return False
+        return True
 
 # --------------------------------------------------------
 class BoardTriangles(BoardBase):
@@ -139,17 +149,26 @@ class Player(engine.Actor):
     def __init__(self,engine,board):
         super(Player,self).__init__(engine)
         self.board = board
-        
+        self.clicks = 0
 
     def mouseUp(self,pos):
         b = BoardBase.inColorButton(pos)
         if b>=0:
-            self.board.changeTo(b)
+            if self.board.finished():
+                print "Completed!"
+            else:
+                self.board.changeTo(b)
+                self.clicks += 1
+                print self.clicks, " clicks"
+                if self.board.finished():
+                    self.mouseUp(pos)
+
         elif BoardBase.inResetButton(pos):
             self.reset()
 
     def reset(self):
         self.board.reset()
+        self.clicks = 0
         
 
 # --------------------------------------------------------
