@@ -38,6 +38,7 @@ class Engine:
         pygame.display.set_caption(name)
         self.atfps, self.nextSound = 0.0, 0.0        
         self.actors = []
+        self.showFPS = False
 
     def addActor(self,a):
         '''Registers an actor in the game. an actor must be subclass of Actor'''
@@ -115,11 +116,13 @@ class Engine:
     def update(self,dt):
         '''Updates the engine state'''
         # Update fps stats
-        self.atfps += dt
-        self.nextSound -= dt
-        if self.atfps > 3.0:
-            pygame.display.set_caption(self.name + " fps: " + str(int(self.clock.get_fps())))
-            self.atfps = 0.0     
+        if self.showFPS:
+            self.atfps += dt
+            if self.atfps > 3.0:
+                pygame.display.set_caption(self.name + " fps: " + str(int(self.clock.get_fps())))
+                self.atfps -= 3.0
+        # update sound timer and actors
+        self.nextSound -= dt             
         for a in self.actors:
             a.update(dt)
 
