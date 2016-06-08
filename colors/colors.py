@@ -1,6 +1,21 @@
-#/usr/bin/env python
+'''
+Copyright (c) 2016 gyakoo
 
-#Import Modules
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+associated documentation files (the "Software"), to deal in the Software without restriction, 
+including without limitation the rights to use, copy, modify, merge, publish, distribute, 
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or 
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT 
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
 import os, pygame, copy
 import math, random
 from pygame.locals import *
@@ -24,6 +39,7 @@ class BoardBase(engine.Actor):
         self.inputPadX = 13
 
     def draw(self):        
+        '''Draws the base buttons and the reset text'''
         scr = self.engine.SCREEN
         r = Rect( self.inputPos, self.inputSize )
         i = 0
@@ -83,7 +99,7 @@ class BoardSquares(BoardBase):
                 r.x += r.width + px
             r.y += r.height + py
 
-        # preparing input pad pos/size
+        # preparing input buttons pos/size
         w = (r.x-sx)/len(BoardBase.colors)
         self.inputPadX = 8
         w -= self.inputPadX
@@ -102,6 +118,7 @@ class BoardSquares(BoardBase):
         self.floodFill(cc,t,x,y)
 
     # recursive, not so fast but ok so far
+    # only goes right and then down. It does not check upwards!
     def floodFill(self,cc,t,x,y):
         if x+1 < self.dim[0]:
             nc = self.grid[y][x+1]
@@ -125,6 +142,7 @@ class BoardSquares(BoardBase):
         return True
 
 # --------------------------------------------------------
+# Implement!
 class BoardTriangles(BoardBase):
     '''Contains the board logic. TRIANGLES'''
     def __init__(self,engine,tilesdim=(7,7)):
@@ -152,18 +170,20 @@ class Player(engine.Actor):
         self.clicks = 0
 
     def mouseUp(self,pos):
+        # check button clicked
         b = BoardBase.inColorButton(pos)
         if b>=0:
+            # it's already finished?
             if self.board.finished():
                 print "Completed!"
             else:
+                # not finished, change colors!
                 self.board.changeTo(b)
                 self.clicks += 1
                 print self.clicks, " clicks"
                 if self.board.finished():
                     self.mouseUp(pos)
-
-        elif BoardBase.inResetButton(pos):
+        elif BoardBase.inResetButton(pos): # reset?
             self.reset()
 
     def reset(self):
