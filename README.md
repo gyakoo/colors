@@ -1,5 +1,11 @@
 # colors
-colors prototype
+Quick colors prototype
+
+<img src="screenshot.png"/>
+
+You must click on the bottom buttons to change the colors starting from the top left tile. It'll change the adjacent tiles with the same color, until you fill the board.
+
+Click 'Reset' to restart.
 
 # setup
 Install:
