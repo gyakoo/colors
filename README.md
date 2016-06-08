@@ -7,6 +7,10 @@ Install:
 * pygame last version for 2.7
 * py2exe (only if making exe)
 
+You can use any notepad to edit the python files (colors.py and engine.py).
+
+For a good debugging experience use Visual Studio with PTVS (Python Tools for VS).
+
 enjoy!
 
 # MIT license
