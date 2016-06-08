@@ -167,6 +167,7 @@ class Player(engine.Actor):
             self.reset()
 
     def reset(self):
+        print "Reset"
         self.board.reset()
         self.clicks = 0
         
